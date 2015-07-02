@@ -1,0 +1,125 @@
+R code documentation
+Source: Khang TF, Lau CY. (2015) Getting the most out of RNA-seq data analysis. PeerJ PrePrints 3:e1463 https://dx.doi.org/10.7287/peerj.preprints.1198v1
+Author: Ching Yee Lau
+Version: 1.0
+Date: 26 June 2016
+_______________________________________________________________________________________________________
+
+
+Contents: Differential Expression Analysis (DEA) of raw RNA-Seq count data using the custom-built DEA function in R environment.
+
+The folder (DEA) contains
+1) DEA.R file		: R code for DEA function
+2) ztest.R file		: R code for simple Z-test analysis (one of the analysis in DEA function)
+3) asc_0.1.4 folder	: R implementation of ASC analysis (one of the analysis in DEA function) which was downloaded from 'http://www.stat.brown.edu/Zwu/research.aspx'
+
+
+---------------
+ DEA function 
+---------------
+
+Description:
+
+This function is basically a wrapper for six different differentially expressed genes (DEG) call methods. It does the following:
+
+1) DESeq-normalization of raw RNA-Seq count data.
+2) Removal of features (e.g., genes) with no-detected expression (i.e., zero counts) across all the samples.
+3) Runs DESeq, DESeq2, NOISeq, edgeR, ASC and simple Z-test. Note that non-normalized data is used for DESeq2 analysis because the input of DESeq2 must be raw counts of sequencing reads.
+
+
+      
+Usage:
+
+DEA(countData,conditions,replicates=NULL,bcv)
+
+
+
+Arguments:
+
+- countData -
+
+	A matrix or data frame of raw count data. The rows correspond to features (genes), and the columns to biological replicates. 
+
+
+- conditions -
+
+	A factor of experimental conditions (e.g., phenotypes or treatments). The length of the factor has to be equal to the number of columns of the ‘countData’, assigning a condition to each sample. If ‘conditions’ is not a factor, it will be coerced into one.
+
+
+- replicates -
+
+	Logical, specifying whether experiment has biological replicates (TRUE) or not (FALSE).
+
+
+- bcv -
+
+	A number for the biological coefficient of variation (BCV) in unreplicated edgeR analysis. According to edgeR user's guide: "Typical values for the common BCV (square-root-dispersion) for datasets arising from well-controlled experiments are 0.4 for human data, 0.1 for data on genetically identical model organisms or 0.01 for technical replicates".
+
+
+
+Details:
+
+Four Bioconductor packages: DESeq, DESeq2, NOISeq, edgeR must be installed and loaded to use the DEA function. This function was construted based on DESeq version 1.18.0, DESeq2 version 1.6.3, NOISeq version 2.8.0 and edgeR version 3.8.6. Other versions of these packages may cause failure. This function uses the R implementation of ASC version 0.1.4 (path:DEA/asc_0.1.4/asc_0.1.4.R) and custom-built R code for simple Z-test analysis (path:DEA/ztest.R). 
+
+To load this function, simply place the DEA folder at your working dicrectory and type 'source("DEA/DEA.R")' in an R command window.
+
+This function implements all methods by using default settings or parameters/pipelines suggested in their user's guide or manual.
+
+The selection criteria for differentially expressed features for each method are as follow --
+
+- DESeq, DESeq2, edgeR and simple Z-test -
+
+	-log10 p-value >= 2/|log2 fold-change|
+
+
+- NOISeq -
+
+	For argument replicates=TRUE, use q=0.95
+	For argument replicates=FALSE, use q=0.9
+	(These criteria were suggested by NOISeq user's guide)
+
+- ASC -
+
+	|estimated log fold change| >= 1 AND
+	(estimated posterior probability that the fold change is greater than two >= 0.99 OR
+ 	 estimated posterior probability that the fold change is  less   than two >= 0.99)
+
+
+
+Value:
+
+‘DEA’ returns a list object containing six components named as "deseq.deg", "deseq2.deg", "noiseq.deg", "edger.deg", "asc.deg", "ztest.deg". Each of them contains the DEG called by DESeq, DESeq2, NOISeq, edgeR, ASC and simple Z-test, respectively. For argument replicates=TRUE, the "asc.deg" component contains "NA" since the ASC analysis is only available for unreplicated RNA-seq count data. Additionally, the "asc.deg" component may possibly contain "try-error" class object instead of the DEG possibly to unknown bugs in the ASC source code.
+
+
+
+Examples:
+
+## "cheung.eset" ExpressionSet object can be downloaded at ReCount website 'http://bowtie-bio.sourceforge.net/recount/'
+## this object contains raw RNA-Seq count data with 17 female samples and 24 male samples
+
+> table(cheung.eset$gender)
+
+ F  M 
+17 24 
+
+
+## extract one female sample and one male sample from cheung.eset object as input for DEA function
+
+> cheung.eset$gender[c(1,18)]
+[1] F M
+Levels: F M
+
+> DEA_cheung_norep <- DEA(exprs(cheung.eset)[,c(1,18)],cheung.eset$gender[c(1,18)],FALSE,0.4)
+
+
+## extract three female samples and three male samples from cheung.eset object as input for DEA function
+
+> cheung.eset$gender[c(1:3,18:20)]
+[1] F F F M M M
+Levels: F M
+
+> DEA_cheung_3rep <- DEA(exprs(cheung.eset)[,c(1:3,18:20)],cheung.eset$gender[c(1:3,18:20)],TRUE)
+
+
+
+

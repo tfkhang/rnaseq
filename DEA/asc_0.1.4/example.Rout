@@ -1,0 +1,70 @@
+
+R version 3.0.2 (2013-09-25) -- "Frisbee Sailing"
+Copyright (C) 2013 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> source("./asc_0.1.4.R")
+> load("exampleData.rda")
+> ### The example data set has two long vectors, X1 and X2, each of 20,000 genes
+> ### X1 and X2 must of the same length and should represent genes in the same order
+> ### To estimate the posterior mean of log fold change 
+> D <- DGE(X1,X2)
+> ### This function returns the estimated log fold change, as well as the hyperparamters
+> ###
+> ### identify a subset of genes of interest.
+> ### For example, those with log fold change greater than 0.5
+> k1=which(abs(D$delta[,1])>.5)
+> D$delta[k1] 
+[1] -0.8166844  0.5828976 -0.5996817  0.5434977 -0.5028134 -0.5009370 -0.7606731
+[8]  0.5002705 -0.7771827
+> ### obtain estimated probability that the fold chnage is greater than
+> ### a cut off. Here the example is 2 (notice this is fold change, not fold change).
+> postp1=PostProb(D$delta[k1,],X1[k1],X2[k1],D$pars,d0=2)
+> round(postp1,3)
+          delta P(X1/X2>2) P(X2/X1>2)
+ID 2005  -0.817      0.000      0.887
+ID 4990   0.583      0.272      0.000
+ID 10281 -0.600      0.000      0.272
+ID 12045  0.543      0.225      0.000
+ID 14309 -0.503      0.000      0.157
+ID 16096 -0.501      0.000      0.066
+ID 17896 -0.761      0.000      0.636
+ID 19805  0.500      0.124      0.000
+ID 19806 -0.777      0.000      0.691
+> ###ANother example
+> ### find the top 10 genes with the greatest estimated fold change
+> k2=order(-abs(D$delta[,1]))[1:10]
+> ### estimate posterior probability that the fold change is more than 50%
+> postp2=PostProb(D$delta[k2,],X1[k2],X2[k2],D$pars,d0=1.5)
+> round(postp2,3)
+          delta P(X1/X2>1.5) P(X2/X1>1.5)
+ID 2005  -0.817        0.000        1.000
+ID 19806 -0.777        0.000        0.989
+ID 17896 -0.761        0.000        0.976
+ID 10281 -0.600        0.000        0.905
+ID 4990   0.583        0.830        0.000
+ID 12045  0.543        0.759        0.000
+ID 14309 -0.503        0.000        0.692
+ID 16096 -0.501        0.000        0.774
+ID 19805  0.500        0.709        0.000
+ID 6872  -0.480        0.000        0.655
+> 
+> 
+> 
+> proc.time()
+   user  system elapsed 
+ 64.628   0.032  64.719 
